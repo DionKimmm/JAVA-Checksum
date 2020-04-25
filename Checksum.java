@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Checksum {
 
@@ -40,7 +41,7 @@ public class Checksum {
         String bin1 = Integer.toBinaryString(highByte);
         String bin2 = Integer.toBinaryString(lowByte);
 
-        System.out.print("원값 : " + bin1 + " ");
+        System.out.print("원값 : \t\t" + bin1 + " ");
         System.out.println(bin2);
 
 
@@ -49,17 +50,18 @@ public class Checksum {
         bin1 = Integer.toBinaryString(~highByte);
         bin2 = Integer.toBinaryString(~lowByte);
 
-        bin1 = bin1.substring(bin1.length()-8);
-        bin2 = bin2.substring(bin2.length()-8);
+        bin1 = bin1.substring(bin1.length() - 8);
+        bin2 = bin2.substring(bin2.length() - 8);
 
 
-        System.out.print(" 1의 보수 : " + bin1 + " ");
+        System.out.print("1의 보수 : \t" + bin1 + " ");
         System.out.println(bin2);
 
         int temp[] = new int[2];
         temp[0] = Integer.parseInt(bin1, 2);
         temp[1] = Integer.parseInt(bin2, 2);
 
+        System.out.println("------계산 종료------");
         return temp;
     }
 
@@ -67,11 +69,19 @@ public class Checksum {
 
         Checksum cs = new Checksum();
 
-        try{
+        Scanner sc = new Scanner(System.in);
+        System.out.println("input.txt 파일의 절대경로를 붙여넣기 하여 입력해주세요.");
+
+        String dir = sc.nextLine();
+        System.out.println("\n\n\n\n\ndir: " + dir);
+        try {
             //파일 객체 생성
-            File file = new File("C:\\Users\\20143\\IdeaProjects\\Checksum\\input.txt");
+            File inputFile = new File(dir);
+//            File inputFile = new File("C:\\Users\\20143\\IdeaProjects\\Checksum\\input.txt");
+            File outputFile = new File("output_checksum.txt");
             //입력 스트림 생성
-            FileReader filereader = new FileReader(file);
+            FileReader filereader = new FileReader(inputFile);
+            FileWriter filewriter = new FileWriter(outputFile, false);
 
             int character = 0;
             int count = 0; // even parity bit를 위한 카운트 변수
@@ -91,12 +101,12 @@ public class Checksum {
             // 6. 결과 값을 output_checksum.txt에 출력한다.
 
             // 1
-            while((character = filereader.read()) != -1){
+            while ((character = filereader.read()) != -1) {
                 count = 0;
-                System.out.print((char)character + " ");
+                System.out.print((char) character + " ");
 
                 // 2
-                System.out.print("변환 전: " + character+"\t");
+                System.out.print("변환 전 정수값: " + character + "\t");
                 String binaryString = Integer.toBinaryString(character);
 
                 // ASCII 코드가 7비트가 아닐경우 왼쪽에 0을 추가하며 7비트 자릿수를 맞춰줍니다.
@@ -104,19 +114,19 @@ public class Checksum {
                     binaryString = "0" + binaryString;
                 }
 
-                System.out.println(binaryString);
+                System.out.println("이진값: " + binaryString);
                 // 3
                 char[] binaryCharArray = binaryString.toCharArray();
 //                System.out.println(binaryCharArray);
                 // 4
-                for(int i = 0; i < binaryString.length(); i++){
+                for (int i = 0; i < binaryString.length(); i++) {
 //                    System.out.println(binaryCharArray[i]);
                     if (binaryCharArray[i] == '1') {
                         count++;
 //                        System.out.println(count);
                     }
                 }
-                System.out.println("count : " + count);
+                System.out.println("1 count : " + count);
                 if (count % 2 == 0) {
                     parityBit = 0;
                     System.out.print("짝수 패리티 비트 적용: ");
@@ -135,77 +145,66 @@ public class Checksum {
                 // 5-4. 덧셈 결과를 1의 보수 처리한다.
 
 
-
                 int binToInt = Integer.parseInt(binaryString, 2);
-                System.out.println("변환 후 : " + binToInt + "\n");
-                if (checksumArrayList.size() < 4){
+                System.out.println("변환 후 : " + binToInt);
+                if (checksumArrayList.size() < 4) {
                     checksumArrayList.add(binToInt);
-                    System.out.println(checksumArrayList);
+                    System.out.println("list: " + checksumArrayList + "\n");
                 } else { // 덧셈 연산 시작
 
                     int[] result;
                     result = cs.DoChecksum(checksumArrayList);
-                    System.out.println("result: " + result[0] + " " + result[1]);
+
+
+                    // 6. 파일 write
+                    String highBinaryString = Integer.toBinaryString(result[0]);
+                    String lowBinaryString = Integer.toBinaryString(result[1]);
+                    System.out.println(highBinaryString.length() + " " + lowBinaryString.length());
+                    while (highBinaryString.length() != 8) {
+                        highBinaryString = "0" + highBinaryString;
+                    }
+                    while (lowBinaryString.length() != 8) {
+                        lowBinaryString = "0" + lowBinaryString;
+                    }
+                    filewriter.write(highBinaryString + " " + lowBinaryString + "\n");
+                    filewriter.flush();
+                    System.out.println("result: " + highBinaryString + " " + lowBinaryString);
 
                     checksumArrayList.clear();
                     checksumArrayList.add(binToInt);
-                    System.out.println(checksumArrayList);
+                    System.out.println("list: " + checksumArrayList + "\n");
                 }
-
-                // 6
-
-
             }
-            filereader.close();
-
             // 16비트 계산을 위한 짝이 갖추어지지 않았을 때
             // 텍스트 문자 0의 아스키 코드에 짝수 패리티 비트가 더해진 8비트를 변환하면 96이라는 숫자가 된다.
             // 따라서 텍스트 파일에 96을 어레이리스트에 추가하면 0을 추가한 효과를 가지게 된다.
-            if(!checksumArrayList.isEmpty()) {
-                System.out.println("--떨이 처리 !! --");
-                while(checksumArrayList.size() < 4) {
+            if (!checksumArrayList.isEmpty()) {
+                System.out.println("-- 나머지 처리 !! --");
+                while (checksumArrayList.size() < 4) {
                     checksumArrayList.add(96);
                 }
                 int[] result;
                 result = cs.DoChecksum(checksumArrayList);
-                System.out.println("result: " + result[0] + " " + result[1]);
+                String highBinaryString = Integer.toBinaryString(result[0]);
+                String lowBinaryString = Integer.toBinaryString(result[1]);
+                System.out.println(highBinaryString);
+                System.out.println(lowBinaryString);
+                //C:\\Users\\20143\\IdeaProjects\\Checksum\\input.txt
+                while (highBinaryString.length() != 8) {
+                    highBinaryString = "0" + highBinaryString;
+                }
+                while (lowBinaryString.length() != 8) {
+                    lowBinaryString = "0" + lowBinaryString;
+                }
+                filewriter.write(highBinaryString + " " + lowBinaryString + "\n");
+                filewriter.flush();
+                System.out.println("result: " + highBinaryString + " " + lowBinaryString);
 
             }
-        }catch (IOException e) {
+            filereader.close();
+            filewriter.close();
+        } catch (IOException e) {
 
         }
-
-//        // input.txt 파일을 읽습니다.
-//        File dir = new File("C:\\Users\\20143\\IdeaProjects\\Checksum\\input.txt");
-//        try {
-//            BufferedReader br = new BufferedReader(new FileReader(dir));
-//            while(true) {
-//                String line = br.readLine();
-//                if(line.length()!=0) {
-//                    System.out.println(line);
-//                    if (line==null) break;
-//                }
-//            }
-//            br.close();
-//        } catch (NullPointerException | IOException e) {
-//
-//        }
     }
 }
-//    public void read() {
-//        File dir = new File("C:\\Users\\20143\\IdeaProjects\\Checksum\\input.txt");
-//        try {
-//            BufferedReader br = new BufferedReader(new FileReader(dir));
-//            while(true) {
-//                String line = br.readLine();
-//                if(line.length()!=0) {
-//                    System.out.println(line);
-//                    if (line==null) break;
-//                }
-//            }
-//            br.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
